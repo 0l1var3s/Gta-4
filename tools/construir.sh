@@ -18,9 +18,9 @@ python3 -I "$HERE/parchear.py" "$WORK/dec"
 python3 -I "$HERE/recursos.py" "$WORK/dec"
 cp "$HERE/default_args.txt" "$WORK/dec/assets/default_args.txt"
 
-# Menú "Gráficos del juego" -> classes2.dex
+# Menús "Gráficos del juego" / "Controles y mando" y GamepadRemap -> classes2.dex
 javac --release 8 -nowarn -encoding UTF-8 -cp "$TOOLS/android-4.1.1.4.jar" \
-  -d "$WORK/java/classes" "$HERE/java/com/libertyrecomp/GraphicsMenu.java"
+  -d "$WORK/java/classes" "$HERE"/java/com/libertyrecomp/*.java
 java -cp "$TOOLS/dx.jar" com.android.dx.command.Main --dex --min-sdk-version=26 \
   --output="$WORK/java/classes2.dex" "$WORK/java/classes"
 

@@ -79,13 +79,27 @@ sustituir(p("AndroidManifest.xml"),
           '<meta-data android:name="SDL_ENV.SDL_JOYSTICK_HIDAPI" android:value="0"/>'
           '<meta-data android:name="SDL_ENV.SDL_ANDROID_LOW_LATENCY_AUDIO" android:value="0"/>')
 
+# Reasignación de botones del mando (GamepadRemap en classes2.dex): se aplica
+# a cada pulsación antes de que SDL la vea.
+sustituir(p("smali", "org", "libsdl", "app", "SDLActivity.smali"),
+          ".method public dispatchKeyEvent(Landroid/view/KeyEvent;)Z\n    .locals 3\n",
+          ".method public dispatchKeyEvent(Landroid/view/KeyEvent;)Z\n    .locals 3\n\n"
+          "    invoke-static {p0, p1}, Lcom/libertyrecomp/GamepadRemap;->remap(Landroid/content/Context;Landroid/view/KeyEvent;)Landroid/view/KeyEvent;\n\n"
+          "    move-result-object p1\n")
+
+# Audio: búfer del dispositivo de 1024 muestras (~21 ms) para absorber tirones.
+sustituir(p("AndroidManifest.xml"),
+          '<meta-data android:name="SDL_ENV.SDL_ANDROID_LOW_LATENCY_AUDIO" android:value="0"/>',
+          '<meta-data android:name="SDL_ENV.SDL_ANDROID_LOW_LATENCY_AUDIO" android:value="0"/>'
+          '<meta-data android:name="SDL_ENV.SDL_AUDIO_DEVICE_SAMPLE_FRAMES" android:value="1024"/>')
+
 # ---------------------------------------------------------------------------
 # 2. Paquete y nombre nuevos: se instala junto a la versión original.
 # ---------------------------------------------------------------------------
 yml = p("apktool.yml")
 sustituir(p("AndroidManifest.xml"), 'package="com.libertyrecomp"', f'package="{NUEVO_PAQUETE}"')
-sustituir(yml, "versionName: 0.5.9.3", "versionName: 0.5.9.3-es-s24u.2")
-sustituir(yml, "versionCode: 18", "versionCode: 19")
+sustituir(yml, "versionName: 0.5.9.3", "versionName: 0.5.9.3-es-s24u.3")
+sustituir(yml, "versionCode: 18", "versionCode: 20")
 sustituir(p("res", "values", "strings.xml"), ">Liberty Recompiled<", f">{NOMBRE_APP}<")
 
 # ---------------------------------------------------------------------------

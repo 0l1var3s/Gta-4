@@ -2,7 +2,8 @@
 # ===== Liberty Recompiled ES - Samsung Galaxy S24 Ultra (Snapdragon 8 Gen 3 / Adreno 750) =====
 # Este archivo se copia a Android/data/com.libertyrecomp.es/files/args.txt la
 # primera vez que se abre la app. Lo mas comodo es cambiar los graficos con el
-# boton "Graficos del juego" del lanzador, que reescribe el bloque MENU GRAFICOS.
+# boton "Graficos del juego" del lanzador, que reescribe el bloque MENU GRAFICOS
+# (los menus Graficos y Controles guardan aqui sus opciones).
 #
 # Distancia de dibujado dinamica: limite inferior (80 % de la distancia elegida).
 --gta4_dynamic_draw_distance_min=0.80
@@ -19,6 +20,7 @@
 --android_thermal_guard_cool_c=62
 
 # >>> MENU GRAFICOS (lo escribe la app: usa el boton Graficos del juego)
+# menu-version=3
 --gta4_output_height_cap=1080
 --gta4_native_upscaler=native
 --gta4_frame_limit=30
@@ -36,5 +38,7 @@
 --audio_maxqframes=64
 --audio_low_latency=false
 --android_perf_hint=false
+--ignore_thread_priorities=false
+--host_file_io_workers=8
 --user_language=5
 # <<< MENU GRAFICOS

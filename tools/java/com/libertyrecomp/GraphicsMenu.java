@@ -58,8 +58,11 @@ public final class GraphicsMenu {
     private static final int ACCENT = 0xFFF5B335;
     private static final int ON_ACCENT = 0xFF111111;
 
-    private static final String BEGIN = "# >>> MENU GRAFICOS (lo escribe la app: usa el boton Graficos del juego)";
-    private static final String END = "# <<< MENU GRAFICOS";
+    static final String BEGIN = "# >>> MENU GRAFICOS (lo escribe la app: usa el boton Graficos del juego)";
+    static final String END = "# <<< MENU GRAFICOS";
+    /** Versión del bloque: sube cuando cambia el perfil recomendado. */
+    static final int CONFIG_VERSION = 3;
+    static final String VERSION_PREFIX = "# menu-version=";
     private static final String BUTTON_ANCHOR = "Ajustes de rendimiento (pruebas)";
 
     // ------------------------------------------------------------------
@@ -73,6 +76,13 @@ public final class GraphicsMenu {
         final String[][] values; // values[opción][flag]; null = quitar la línea
         int sel = -1;            // -1 = valor personalizado que no está en la lista
         boolean touched;
+        String absent;           // opción que equivale a "sin línea" (valor por defecto del juego)
+
+        Setting absent(String label) {
+            find(label);
+            this.absent = label;
+            return this;
+        }
 
         Setting(String title, String desc, String[] flags, String[] labels, String[][] values) {
             this.title = title;
@@ -88,10 +98,10 @@ public final class GraphicsMenu {
         }
     }
 
-    private static String[] f(String... s) { return s; }
-    private static String[] v(String... s) { return s; }
+    static String[] f(String... s) { return s; }
+    static String[] v(String... s) { return s; }
 
-    private static Setting one(String title, String desc, String flag, String[] labels, String[] vals) {
+    static Setting one(String title, String desc, String flag, String[] labels, String[] vals) {
         String[][] values = new String[vals.length][];
         for (int i = 0; i < vals.length; i++) values[i] = new String[]{vals[i]};
         return new Setting(title, desc, new String[]{flag}, labels, values);
@@ -171,14 +181,20 @@ public final class GraphicsMenu {
                         {"0.5", "0.5", "0.5", "0.5"}, {"0.7", "0.7", "0.7", "0.7"},
                         {"1.0", "1.0", "1.0", "1.0"}}));
         s.add(new Setting("Audio",
-                "Estable: búfer de audio doble y la CPU no baja de frecuencia a mitad de partida (corrige el sonido distorsionado). Ahorro: como la versión original.",
-                f("audio_maxqframes", "audio_low_latency", "android_perf_hint"),
-                f("Auto", "Estable", "Ahorro de batería"),
-                new String[][]{{null, null, null}, {"64", "false", "false"}, {"32", "false", "true"}}));
+                "Estable + prioridad: búfer de audio doble, CPU sin bajar de frecuencia, más hilos de lectura para que la radio no se corte al conducir y prioridad alta para los hilos de sonido. "
+                        + "Estable: igual pero sin prioridad ni lectura extra. Ahorro: como la versión original.",
+                f("audio_maxqframes", "audio_low_latency", "android_perf_hint",
+                        "ignore_thread_priorities", "host_file_io_workers"),
+                f("Auto", "Estable + prioridad", "Estable", "Ahorro de batería"),
+                new String[][]{
+                        {null, null, null, null, null},
+                        {"64", "false", "false", "false", "8"},
+                        {"64", "false", "false", null, null},
+                        {"32", "false", "true", null, null}}));
         s.add(one("Idioma del juego", "Idioma de menús, subtítulos y misiones (necesita que tu disco incluya ese idioma).",
                 "user_language",
                 f("Español", "English", "Français", "Deutsch", "Italiano"),
-                v("5", "1", "4", "3", "6")));
+                v("5", "1", "4", "3", "6")).absent("English"));
         return s;
     }
 
@@ -187,11 +203,11 @@ public final class GraphicsMenu {
             "S24 Ultra · Recomendado", "Calidad máxima", "Fluidez 60 FPS", "Batería", "Todo Auto"};
     static final String[][] PRESETS = {
             {"1080p", "Desactivado", "30", "Activada", "SMAA", "4x", "Trilineal", "Normal 1.0", "Activada",
-                    "Auto", "Normal 1.0", "Auto", "Auto", "Media 0.5", "Estable", null},
+                    "Auto", "Normal 1.0", "Auto", "Auto", "Media 0.5", "Estable + prioridad", null},
             {"1440p (nativa)", "Desactivado", "30", "Activada", "SMAA", "8x", "Trilineal", "Lejana 1.25", "Activada",
-                    "Alta", "Lejana 1.25", "1080p", "Sí", "Media 0.5", "Estable", null},
+                    "Alta", "Lejana 1.25", "1080p", "Sí", "Media 0.5", "Estable + prioridad", null},
             {"1080p", "Calidad", "60", "Activada", "FXAA", "4x", "Trilineal", "Normal 1.0", "Activada",
-                    "Baja", "Normal 1.0", "Original", "No", "Normal 0.4", "Estable", null},
+                    "Baja", "Normal 1.0", "Original", "No", "Normal 0.4", "Estable + prioridad", null},
             {"720p", "Desactivado", "30", "Activada", "FXAA", "2x", "Bilineal", "Corta 0.75", "Activada",
                     "Baja", "Corta 0.75", "Original", "No", "Baja 0.3", "Ahorro de batería", null},
             {"Auto", "Auto", "Auto", "Auto", "Auto", "Auto", "Auto", "Auto", "Auto",
@@ -280,6 +296,24 @@ public final class GraphicsMenu {
         parent.addView(sum, index + 1, slp);
         sSummary = sum;
         updateSummary(a);
+
+        Button cb = new Button(a);
+        cb.setTag("controles");
+        cb.setText("Controles y mando");
+        cb.setAllCaps(false);
+        cb.setTypeface(Typeface.DEFAULT_BOLD);
+        cb.setTextColor(ACCENT);
+        cb.setBackgroundDrawable(focusable(a, CARD, ACCENT, 2));
+        cb.setFocusable(true);
+        cb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ControlsMenu.show(a);
+            }
+        });
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(nlp.width, nlp.height);
+        clp.topMargin = nlp.topMargin;
+        parent.addView(cb, index + 2, clp);
         return true;
     }
 
@@ -328,7 +362,7 @@ public final class GraphicsMenu {
         return new File(dir, "args.txt");
     }
 
-    private static List<String> readLines(File file, Context c) throws IOException {
+    static List<String> readLines(File file, Context c) throws IOException {
         InputStream in;
         if (file.isFile()) {
             in = new FileInputStream(file);
@@ -346,7 +380,7 @@ public final class GraphicsMenu {
         return lines;
     }
 
-    private static String flagName(String line) {
+    static String flagName(String line) {
         String t = line.trim();
         if (!t.startsWith("--")) return null;
         int eq = t.indexOf('=');
@@ -369,7 +403,7 @@ public final class GraphicsMenu {
         return m;
     }
 
-    private static void save(Context c, List<Setting> settings) throws IOException {
+    static void save(Context c, List<Setting> settings) throws IOException {
         File file = argsFile(c);
         writeLines(file, merge(readLines(file, c), settings));
     }
@@ -382,6 +416,7 @@ public final class GraphicsMenu {
             for (String fl : s.flags) managed.add(fl);
         }
         List<String> out = new ArrayList<String>();
+        List<String> kept = new ArrayList<String>();
         boolean inBlock = false;
         for (String l : lines) {
             String t = l.trim();
@@ -389,8 +424,8 @@ public final class GraphicsMenu {
             if (t.equals(END)) { inBlock = false; continue; }
             String n = flagName(l);
             if (inBlock) {
-                // Conserva valores del bloque anterior que no se gestionan ahora.
-                if (n != null && !managed.contains(n)) out.add(l);
+                // Conserva valores del bloque que gestiona el otro menú (p. ej. Controles).
+                if (n != null && !managed.contains(n)) kept.add(l);
                 continue;
             }
             if (n != null && managed.contains(n)) continue;
@@ -399,6 +434,8 @@ public final class GraphicsMenu {
         while (!out.isEmpty() && out.get(out.size() - 1).trim().isEmpty()) out.remove(out.size() - 1);
         out.add("");
         out.add(BEGIN);
+        out.add(VERSION_PREFIX + CONFIG_VERSION);
+        out.addAll(kept);
         for (Setting s : settings) {
             if (s.sel < 0) continue;
             String[] vals = s.values[s.sel];
@@ -459,9 +496,11 @@ public final class GraphicsMenu {
                     break;
                 }
             }
-            // Idioma sin línea = inglés (valor por defecto del juego).
-            if (s.sel < 0 && s.flags[0].equals("user_language") && !cur.containsKey("user_language")) {
-                s.sel = s.find("English");
+            // Sin ninguna línea = valor por defecto del juego.
+            if (s.sel < 0 && s.absent != null) {
+                boolean none = true;
+                for (String fl : s.flags) if (cur.containsKey(fl)) none = false;
+                if (none) s.sel = s.find(s.absent);
             }
         }
     }
@@ -663,10 +702,31 @@ public final class GraphicsMenu {
 
     /** Devuelve las líneas con el perfil recomendado aplicado, o null si no hace falta. */
     static List<String> upgrade(List<String> lines) {
-        for (String l : lines) if (l.trim().equals(BEGIN)) return null;
+        boolean block = false;
+        int version = 0;
+        for (String l : lines) {
+            String t = l.trim();
+            if (t.equals(BEGIN)) block = true;
+            if (t.startsWith(VERSION_PREFIX)) {
+                try {
+                    version = Integer.parseInt(t.substring(VERSION_PREFIX.length()).trim());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        if (block && version >= CONFIG_VERSION) return null;
         List<Setting> settings = buildSettings();
         select(settings, parse(lines));
-        applyPreset(settings, 0);
+        if (!block) {
+            applyPreset(settings, 0);
+        } else {
+            // v2 -> v3: el audio "Estable" pasa a "Estable + prioridad" (corrige la radio).
+            for (Setting s : settings) {
+                if (s.flags[0].equals("audio_maxqframes") && s.sel == s.find("Estable")) {
+                    s.sel = s.find("Estable + prioridad");
+                }
+            }
+        }
         return merge(lines, settings);
     }
 
@@ -680,7 +740,7 @@ public final class GraphicsMenu {
         }
     }
 
-    private static String deviceLine() {
+    static String deviceLine() {
         String gpu = null;
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(
@@ -709,11 +769,11 @@ public final class GraphicsMenu {
     // Estilo
     // ------------------------------------------------------------------
 
-    private static void refreshRow(Context c, List<TextView> chips, int sel) {
+    static void refreshRow(Context c, List<TextView> chips, int sel) {
         for (int i = 0; i < chips.size(); i++) styleChip(c, chips.get(i), i == sel);
     }
 
-    private static TextView chip(Context c, String label, boolean highlight) {
+    static TextView chip(Context c, String label, boolean highlight) {
         TextView t = new TextView(c);
         t.setText(label);
         t.setGravity(Gravity.CENTER);
@@ -727,7 +787,7 @@ public final class GraphicsMenu {
         return t;
     }
 
-    private static void styleChip(Context c, TextView t, boolean selected) {
+    static void styleChip(Context c, TextView t, boolean selected) {
         if (selected) {
             t.setTextColor(ON_ACCENT);
             t.setTypeface(Typeface.DEFAULT_BOLD);
@@ -739,7 +799,7 @@ public final class GraphicsMenu {
         }
     }
 
-    private static Button button(Context c, String label, boolean primary) {
+    static Button button(Context c, String label, boolean primary) {
         Button b = new Button(c);
         b.setText(label);
         b.setAllCaps(false);
@@ -750,7 +810,7 @@ public final class GraphicsMenu {
         return b;
     }
 
-    private static TextView text(Context c, String s, int sp, int color) {
+    static TextView text(Context c, String s, int sp, int color) {
         TextView t = new TextView(c);
         t.setText(s);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
@@ -758,7 +818,7 @@ public final class GraphicsMenu {
         return t;
     }
 
-    private static GradientDrawable rounded(int color, int radius, int strokeColor, int strokeDp) {
+    static GradientDrawable rounded(int color, int radius, int strokeColor, int strokeDp) {
         GradientDrawable g = new GradientDrawable();
         g.setColor(color);
         g.setCornerRadius(radius);
@@ -766,7 +826,7 @@ public final class GraphicsMenu {
         return g;
     }
 
-    private static StateListDrawable focusable(Context c, int color, int strokeColor, int strokeDp) {
+    static StateListDrawable focusable(Context c, int color, int strokeColor, int strokeDp) {
         int r = dp(c, 12);
         StateListDrawable s = new StateListDrawable();
         s.addState(new int[]{android.R.attr.state_pressed}, rounded(color, r, Color.WHITE, dp(c, 2)));
@@ -775,7 +835,7 @@ public final class GraphicsMenu {
         return s;
     }
 
-    private static int dp(Context c, int v) {
+    static int dp(Context c, int v) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v,
                 c.getResources().getDisplayMetrics()));
     }

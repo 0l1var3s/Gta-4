@@ -6,7 +6,7 @@
 |---|---|
 | Paquete | `com.libertyrecomp.es` (la original es `com.libertyrecomp`, así que **se instalan las dos a la vez**) |
 | Nombre en el cajón de apps | **Liberty Recompiled ES** |
-| Versión | 0.5.9.3-es-s24u.2 (versionCode 19) |
+| Versión | 0.5.9.3-es-s24u.3 (versionCode 20) |
 | Base | Liberty Recompiled v0.5.9.3 (build de apkvision) |
 | Firma | v2 + v3, con clave propia |
 | Requisitos | Android 10 o superior, arm64, Vulkan 1.1+ (el S24 Ultra cumple) |
@@ -55,18 +55,29 @@ Debajo del botón JUGAR hay un botón nuevo, **Gráficos del juego**, y bajo él
 
 Si tienes la versión 1 instalada, al abrir la nueva el perfil recomendado se aplica solo una vez sobre tu `args.txt`, sin tocar el idioma.
 
-### 5. Corrección del audio distorsionado
-El sonido de GTA IV (XMA) se decodifica en la CPU. El juego original usaba *performance hint*, que baja la frecuencia de la CPU para que vaya justa al ritmo de los fotogramas. Los hilos de audio no cuentan para ese cálculo. Cuando la CPU baja de frecuencia o el teléfono se calienta, el audio se queda sin datos y suena distorsionado. El modo **Estable**:
-* `--android_perf_hint=false`: la CPU no se queda corta a mitad de partida (la protección térmica controla el calor).
-* `--audio_maxqframes=64`: duplica el búfer de audio del juego (antes 32, el máximo es 64).
-* `--audio_low_latency=false` y `SDL_ANDROID_LOW_LATENCY_AUDIO=0`: AAudio en modo normal, con un búfer de decenas de ms en vez de ~4 ms.
+### 5. Audio: distorsión y radio que se traba (versiones 2 y 3)
+El sonido de GTA IV (XMA) se decodifica en la CPU, y las emisoras de radio se leen del almacenamiento mientras se conduce. Ahí es justo cuando el juego también carga más ciudad. El modo de audio **«Estable + prioridad»** (por defecto desde la v3) combina:
+* `--android_perf_hint=false`: la CPU no baja de frecuencia a mitad de partida.
+* `--audio_maxqframes=64`: búfer de audio del juego al máximo (el original era 32).
+* `--audio_low_latency=false`, `SDL_ANDROID_LOW_LATENCY_AUDIO=0` y `SDL_AUDIO_DEVICE_SAMPLE_FRAMES=1024`: AAudio en modo normal con un búfer de ~21 ms.
+* `--ignore_thread_priorities=false` (v3): el motor respeta las prioridades que el juego da a sus hilos de sonido y radio. El original las ignoraba.
+* `--host_file_io_workers=8` (v3): 8 canales de lectura en lugar de 4, para que la música de la radio no espere detrás de la carga de la ciudad.
 
-Si quieres el comportamiento original (menos consumo), elige Audio → «Ahorro de batería».
+Si notas algo raro con la prioridad, en Gráficos del juego → Audio elige «Estable» (como la v2) o «Ahorro de batería» (como el original).
+
+### 6. Menú «Controles y mando» (versión 3)
+Es un botón nuevo en el lanzador, debajo de «Gráficos del juego».
+* **Mandos Bluetooth/USB:** muestra el mando conectado y se actualiza solo al conectarlo. Incluye un botón para abrir los ajustes Bluetooth y emparejarlo, y una prueba en vivo que muestra el último botón pulsado.
+* **Controles en pantalla:** «Ocultar con mando» (desaparecen al conectar un mando), «Siempre visibles» o «Quitar siempre».
+* **Estilo de los controles táctiles:** «Mando Xbox» (fijo, el original) o «Contextuales» (solo los botones útiles en cada momento).
+* **Giroscopio del mando** (DualSense, DualShock 4, Switch Pro): activado o desactivado.
+* **Reasignar botones del mando:** A, B, X, Y, LB, RB, L3, R3, Back y Start. Tocas la acción, pulsas el botón del mando y se intercambian, así nunca quedan dos iguales. Se guarda en `files/controles.txt` y se aplica dentro del juego antes de que SDL reciba la pulsación. Los gatillos, sticks y cruceta van por ejes y no se reasignan.
+* **Mover/redimensionar los botones táctiles:** con el editor que ya trae el juego, en el menú de pausa → «Touch Controls» → «Edit Touch Layout».
 
 ## Instalación
 1. Descarga el APK en el teléfono e instálalo. Si Android lo pide, permite "instalar apps desconocidas". **No hace falta desinstalar la versión original.**
 2. Abre **Liberty Recompiled ES**. Como es otra app, tiene su propia carpeta de datos (`Android/data/com.libertyrecomp.es/`), así que hay que volver a elegir la imagen `.iso` USA y el Title Update 8 y pulsar **Instalar**.
-   * **Si ya tienes la versión 1 de Liberty Recompiled ES**, la versión 2 se instala encima (misma firma) y conserva el juego instalado.
+   * **Si ya tienes una versión anterior de Liberty Recompiled ES**, la nueva se instala encima (misma firma) y conserva el juego instalado. Al abrir el lanzador, tu `args.txt` se actualiza solo una vez: la v1 recibe el perfil recomendado, y la v2 solo el nuevo modo de audio.
    * Si quieres, también puedes copiar los archivos en `Android/data/com.libertyrecomp.es/files/install/`.
 3. Pulsa **JUGAR**.
 
@@ -78,4 +89,4 @@ Los scripts de `tools/` aplican todos los cambios a partir del APK original:
 ```
 tools/construir.sh <apk_original> <carpeta_herramientas> <carpeta_trabajo> <salida.apk>
 ```
-`<carpeta_herramientas>` debe contener `apktool_2.10.0.jar`, `dx.jar` (dalvik-dx 16.0.1) y `android-4.1.1.4.jar`. Además hacen falta `zipalign`, `apksigner`, Java 17+ y Python 3 con Pillow y numpy. El menú está en `tools/java/` y se compila en `classes2.dex`. `tools/prueba/` comprueba la lógica de `args.txt` en la JVM.
+`<carpeta_herramientas>` debe contener `apktool_2.10.0.jar`, `dx.jar` (dalvik-dx 16.0.1) y `android-4.1.1.4.jar`. Además hacen falta `zipalign`, `apksigner`, Java 17+ y Python 3 con Pillow y numpy. Los menús y la reasignación están en `tools/java/` y se compilan en `classes2.dex`. `tools/prueba/` comprueba en la JVM la lógica de `args.txt`, las migraciones desde v1/v2 y la reasignación de botones.
