@@ -51,7 +51,9 @@ def sustituir(path, viejo, nuevo, minimo=1):
 #    remota de "actualización" que contacta apkvision.org en cada inicio).
 # ---------------------------------------------------------------------------
 la = p("smali", "com", "libertyrecomp", "LauncherActivity.smali")
-sustituir(la, "    invoke-static {p0}, Lcom/android/support/Main;->Start(Landroid/content/Context;)V\n", "")
+# En su lugar se engancha el menú "Gráficos del juego" (classes2.dex).
+sustituir(la, "    invoke-static {p0}, Lcom/android/support/Main;->Start(Landroid/content/Context;)V\n",
+          "    invoke-static {p0}, Lcom/libertyrecomp/GraphicsMenu;->attach(Landroid/app/Activity;)V\n")
 sustituir(la, "    invoke-static/range {p0 .. p0}, Landroidx/loader/app/services/l;->j(Ljava/lang/Object;)V\n", "")
 for carpeta in (p("smali", "com", "android", "support"), p("smali", "androidx", "loader")):
     shutil.rmtree(carpeta, ignore_errors=True)
@@ -65,12 +67,25 @@ for raiz, _, archivos in os.walk(p("smali")):
         if "Lcom/android/support/" in t or "Landroidx/loader/" in t or "apkvision" in t.lower():
             sys.exit(f"ERROR: queda una referencia a APKVISION en {a}")
 
+# La "migración de argumentos" del original borra de args.txt líneas como
+# --gta4_frame_limit=30 o --gta4_output_height_cap=720 en cada inicio, lo que
+# anularía el menú de gráficos. En una instalación nueva no hace falta.
+sustituir(p("smali", "com", "libertyrecomp", "LibertyActivity.smali"),
+          "    invoke-static {v3}, Lcom/libertyrecomp/LibertyActivity;->migrateArguments(Ljava/io/File;)V\n", "")
+
+# Audio: búfer del dispositivo más grande (AAudio en modo normal).
+sustituir(p("AndroidManifest.xml"),
+          '<meta-data android:name="SDL_ENV.SDL_JOYSTICK_HIDAPI" android:value="0"/>',
+          '<meta-data android:name="SDL_ENV.SDL_JOYSTICK_HIDAPI" android:value="0"/>'
+          '<meta-data android:name="SDL_ENV.SDL_ANDROID_LOW_LATENCY_AUDIO" android:value="0"/>')
+
 # ---------------------------------------------------------------------------
 # 2. Paquete y nombre nuevos: se instala junto a la versión original.
 # ---------------------------------------------------------------------------
 yml = p("apktool.yml")
 sustituir(p("AndroidManifest.xml"), 'package="com.libertyrecomp"', f'package="{NUEVO_PAQUETE}"')
-sustituir(yml, "versionName: 0.5.9.3", "versionName: 0.5.9.3-es-s24u")
+sustituir(yml, "versionName: 0.5.9.3", "versionName: 0.5.9.3-es-s24u.2")
+sustituir(yml, "versionCode: 18", "versionCode: 19")
 sustituir(p("res", "values", "strings.xml"), ">Liberty Recompiled<", f">{NOMBRE_APP}<")
 
 # ---------------------------------------------------------------------------

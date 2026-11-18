@@ -1,46 +1,40 @@
 --log_level=warn
-# Display settings (resolution, upscaler, VSync, frame limit, anti-aliasing,
-# draw distance, shadows, reflections, motion blur) belong to the in-game
-# Display menu: a line here would override its saved choice on every launch.
-#
-# ===== Edicion Espanol + Samsung Galaxy S24 Ultra (Snapdragon 8 Gen 3 / Adreno 750) =====
+# ===== Liberty Recompiled ES - Samsung Galaxy S24 Ultra (Snapdragon 8 Gen 3 / Adreno 750) =====
 # Este archivo se copia a Android/data/com.libertyrecomp.es/files/args.txt la
-# primera vez que se abre la app. Para cambiar algo, edita ese args.txt.
+# primera vez que se abre la app. Lo mas comodo es cambiar los graficos con el
+# boton "Graficos del juego" del lanzador, que reescribe el bloque MENU GRAFICOS.
 #
-# Idioma del juego: 5 = Espanol (1 = Ingles, 3 = Aleman, 4 = Frances, 6 = Italiano).
---user_language=5
-#
-# Distancia de dibujado dinamica: baja un poco cuando el S24 Ultra no llega a
-# los FPS objetivo y la recupera cuando hay margen (evita tirones).
---gta4_dynamic_draw_distance=true
+# Distancia de dibujado dinamica: limite inferior (80 % de la distancia elegida).
 --gta4_dynamic_draw_distance_min=0.80
---gta4_shadow_distance_scale=1.0
 --gta4_reflection_capture_distance=near
-#
-# Densidad de trafico y peatones: 0.5 (original 0.4). El S24 Ultra tiene
-# 12 GB de RAM y CPU de sobra; mas alto aumenta el calor en sesiones largas.
---gta4_traffic_density_scale=0.5
---gta4_parked_car_density_scale=0.5
---gta4_ped_density_scale=0.5
---gta4_scenario_ped_density_scale=0.5
 --gta4_profile_native_detailed_cpu=false
 --gta4_profile_native_detailed_gpu=false
 --gta4_native_max_queued_frames=3
 # The 30 FPS guard (environment reflection rate only now) is off by default.
 --gta4_fps_guard=0
 #
-# Estabilidad / temperatura:
-# - Indica a Android cuanto trabajo tiene cada fotograma para que la CPU no
-#   vaya siempre al maximo (menos calor y bateria, menos estrangulamiento).
---android_perf_hint=true
-# - Mientras espera el siguiente fotograma, la CPU duerme en lugar de girar.
---gta4_frame_wait_sleep=true
-# - Protector termico: temperaturas de GPU (C) a las que baja y restaura la
-#   distancia de dibujado si el sistema no da datos de margen termico.
+# Proteccion termica: temperaturas de GPU (C) a las que baja y restaura la
+# distancia de dibujado (solo si Android no informa del margen termico).
 --android_thermal_guard_hot_c=72
 --android_thermal_guard_cool_c=62
-#
-# Calidad de texturas: filtrado anisotropico 4x (casi gratis en la Adreno 750,
-# texturas del suelo mucho mas nitidas). Borra la linea si prefieres decidirlo
-# desde el menu del juego.
+
+# >>> MENU GRAFICOS (lo escribe la app: usa el boton Graficos del juego)
+--gta4_output_height_cap=1080
+--gta4_native_upscaler=native
+--gta4_frame_limit=30
+--gta4_present_mode=vsync
+--gta4_native_anti_aliasing=smaa
 --gta4_anisotropic_filtering=4x
+--gta4_texture_filtering=trilinear
+--gta4_draw_distance_scale=1.0
+--gta4_dynamic_draw_distance=true
+--gta4_shadow_distance_scale=1.0
+--gta4_traffic_density_scale=0.5
+--gta4_parked_car_density_scale=0.5
+--gta4_ped_density_scale=0.5
+--gta4_scenario_ped_density_scale=0.5
+--audio_maxqframes=64
+--audio_low_latency=false
+--android_perf_hint=false
+--user_language=5
+# <<< MENU GRAFICOS

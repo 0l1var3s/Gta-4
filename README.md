@@ -6,6 +6,7 @@
 |---|---|
 | Paquete | `com.libertyrecomp.es` (la original es `com.libertyrecomp`, así que **se instalan las dos a la vez**) |
 | Nombre en el cajón de apps | **Liberty Recompiled ES** |
+| Versión | 0.5.9.3-es-s24u.2 (versionCode 19) |
 | Base | Liberty Recompiled v0.5.9.3 (build de apkvision) |
 | Firma | v2 + v3, con clave propia |
 | Requisitos | Android 10 o superior, arm64, Vulkan 1.1+ (el S24 Ultra cumple) |
@@ -31,33 +32,50 @@
 * Botones principales (Jugar, Instalar, Guardar) en ámbar con texto oscuro para que destaquen. Los secundarios tienen más contraste.
 * Esquinas más redondeadas (12 dp) y borde de foco ámbar, también al usar mando.
 
-### 3. Estabilidad y gráficos para el S24 Ultra (Snapdragon 8 Gen 3 / Adreno 750)
-Estos ajustes están en `assets/default_args.txt`. Al primer inicio se copian a `Android/data/com.libertyrecomp.es/files/args.txt`, donde se pueden editar.
+### 3. Menú «Gráficos del juego» (versión 2)
+Debajo del botón JUGAR hay un botón nuevo, **Gráficos del juego**, y bajo él un resumen de la configuración actual (p. ej. `1080p · 30 FPS · SMAA · AF 4x · Audio estable`). Se maneja con el dedo o con el mando.
 
-| Ajuste | Valor | Motivo |
-|---|---|---|
-| Protección térmica | **activada por defecto** | El S24 Ultra se calienta en sesiones largas. Esto baja la distancia de dibujado antes de que el teléfono reduzca su velocidad, en vez de dar tirones. |
-| `android_thermal_guard_hot_c` / `cool_c` | 72 °C / 62 °C | Solo se usan si Android no informa del margen térmico. |
-| `android_perf_hint` | true | La CPU sube su velocidad solo cuando el fotograma lo necesita: menos calor y batería. |
-| `gta4_frame_wait_sleep` | true | La CPU descansa mientras espera el siguiente fotograma, en vez de seguir trabajando. |
-| `gta4_anisotropic_filtering` | 4x | Texturas del suelo más nítidas, con un coste casi nulo en la Adreno 750. |
-| Densidad de tráfico y peatones | 0.5 (antes 0.4) | La ciudad está más viva y el S24 Ultra va sobrado. |
-| Distancia de dibujado dinámica | se mantiene (mín. 0.80) | Evita caídas de FPS. |
+**Perfiles rápidos:** *S24 Ultra · Recomendado* (por defecto), *Calidad máxima*, *Fluidez 60 FPS*, *Batería* y *Todo Auto*.
 
-La resolución, el reescalado, los FPS y el antialiasing se siguen eligiendo en el menú **Pantalla** dentro del juego, como en la versión original.
+**Ajustes individuales:** resolución de salida, reescalado FSR 1, límite de FPS (30/40/60/sin límite), VSync, antialiasing (FXAA/SMAA/MSAA), filtrado anisotrópico y de texturas, distancia de dibujado (fija y dinámica), calidad y distancia de sombras, reflejos, desenfoque de movimiento, tráfico y peatones, modo de audio e idioma del juego.
+
+«Auto» en cualquier ajuste deja que decida el menú Pantalla del propio juego. Lo que no esté en Auto se aplica en cada partida y manda sobre lo que elijas en el menú del juego. Los cambios se guardan en `args.txt` y se aplican al pulsar Jugar.
+
+### 4. Configuración del S24 Ultra (perfil recomendado, ya aplicado)
+| Ajuste | Valor |
+|---|---|
+| Resolución de salida | 1080p (se escala a la pantalla de 1440p). Mucho menos calor que en nativa y casi igual de nítido. |
+| FPS | 30 con VSync, que divide exacto los 120 Hz de la pantalla |
+| Antialiasing | SMAA |
+| Filtrado | anisotrópico 4x + trilineal |
+| Distancia de dibujado | 1.0 con distancia dinámica (mínimo 0.80) |
+| Tráfico/peatones | 0.5 |
+| Protección térmica | activada; baja la distancia de dibujado a 72 °C y la restaura a 62 °C |
+| Audio | modo «Estable» (ver abajo) |
+
+Si tienes la versión 1 instalada, al abrir la nueva el perfil recomendado se aplica solo una vez sobre tu `args.txt`, sin tocar el idioma.
+
+### 5. Corrección del audio distorsionado
+El sonido de GTA IV (XMA) se decodifica en la CPU. El juego original usaba *performance hint*, que baja la frecuencia de la CPU para que vaya justa al ritmo de los fotogramas. Los hilos de audio no cuentan para ese cálculo. Cuando la CPU baja de frecuencia o el teléfono se calienta, el audio se queda sin datos y suena distorsionado. El modo **Estable**:
+* `--android_perf_hint=false`: la CPU no se queda corta a mitad de partida (la protección térmica controla el calor).
+* `--audio_maxqframes=64`: duplica el búfer de audio del juego (antes 32, el máximo es 64).
+* `--audio_low_latency=false` y `SDL_ANDROID_LOW_LATENCY_AUDIO=0`: AAudio en modo normal, con un búfer de decenas de ms en vez de ~4 ms.
+
+Si quieres el comportamiento original (menos consumo), elige Audio → «Ahorro de batería».
 
 ## Instalación
 1. Descarga el APK en el teléfono e instálalo. Si Android lo pide, permite "instalar apps desconocidas". **No hace falta desinstalar la versión original.**
 2. Abre **Liberty Recompiled ES**. Como es otra app, tiene su propia carpeta de datos (`Android/data/com.libertyrecomp.es/`), así que hay que volver a elegir la imagen `.iso` USA y el Title Update 8 y pulsar **Instalar**.
+   * **Si ya tienes la versión 1 de Liberty Recompiled ES**, la versión 2 se instala encima (misma firma) y conserva el juego instalado.
    * Si quieres, también puedes copiar los archivos en `Android/data/com.libertyrecomp.es/files/install/`.
 3. Pulsa **JUGAR**.
 
 ### Volver al inglés
-Edita `Android/data/com.libertyrecomp.es/files/args.txt` y cambia `--user_language=5` por `--user_language=1`, o borra esa línea.
+Gráficos del juego → Idioma del juego → English → Guardar.
 
 ## Reconstruir
 Los scripts de `tools/` aplican todos los cambios a partir del APK original:
 ```
-tools/construir.sh <apk_original> <apktool.jar> <carpeta_trabajo> <salida.apk>
+tools/construir.sh <apk_original> <carpeta_herramientas> <carpeta_trabajo> <salida.apk>
 ```
-Necesitan `apktool` 2.10, `zipalign`, `apksigner`, Java y Python 3 con Pillow y numpy.
+`<carpeta_herramientas>` debe contener `apktool_2.10.0.jar`, `dx.jar` (dalvik-dx 16.0.1) y `android-4.1.1.4.jar`. Además hacen falta `zipalign`, `apksigner`, Java 17+ y Python 3 con Pillow y numpy. El menú está en `tools/java/` y se compila en `classes2.dex`. `tools/prueba/` comprueba la lógica de `args.txt` en la JVM.
